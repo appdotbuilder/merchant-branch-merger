@@ -1,9 +1,17 @@
 
+import { db } from '../db';
+import { merchantBranchesTable } from '../db/schema';
 import { type MerchantBranch } from '../schema';
 
 export async function getMerchantBranches(): Promise<MerchantBranch[]> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is fetching all merchant branches from the database.
-    // This will be used to populate the list view where users can select branches for merging.
-    return [];
+  try {
+    const results = await db.select()
+      .from(merchantBranchesTable)
+      .execute();
+
+    return results;
+  } catch (error) {
+    console.error('Failed to fetch merchant branches:', error);
+    throw error;
+  }
 }
