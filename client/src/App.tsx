@@ -17,6 +17,7 @@ function App() {
   const [canonicalBranchId, setCanonicalBranchId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [isMerging, setIsMerging] = useState(false);
+  const [isPopulating, setIsPopulating] = useState(false);
   const [backendConnected, setBackendConnected] = useState(false);
   const [connectionAttempted, setConnectionAttempted] = useState(false);
 
@@ -67,6 +68,26 @@ function App() {
       setCanonicalBranchId('');
     } else {
       setSelectedBranchIds(branches.map(branch => branch.id));
+    }
+  };
+
+  // Handle populate demo data
+  const handlePopulateDemo = async () => {
+    setIsPopulating(true);
+    
+    try {
+      await trpc.populateDemoBranches.mutate();
+      console.log('✅ Demo branches populated successfully');
+      
+      // Refresh the branches list after successful population
+      await loadBranches();
+      
+      alert('✅ Demo data populated successfully!');
+    } catch (error) {
+      console.error('Failed to populate demo data:', error);
+      alert('❌ Failed to populate demo data. Please try again.');
+    } finally {
+      setIsPopulating(false);
     }
   };
 
@@ -257,8 +278,15 @@ function App() {
               <div className="text-gray-500">🔄 Loading merchant branches...</div>
             </div>
           ) : branches.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <p>📭 No merchant branches found. Please populate the database with branches to get started.</p>
+            <div className="text-center py-8 space-y-4">
+              <p className="text-gray-500">📭 No merchant branches found. Please populate the database with branches to get started.</p>
+              <Button 
+                onClick={handlePopulateDemo}
+                disabled={isPopulating || !backendConnected}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {isPopulating ? '🔄 Populating...' : '📊 Populate with Demo Data'}
+              </Button>
             </div>
           ) : (
             <div className="space-y-3">

@@ -9,6 +9,7 @@ import { mergeBranchesInputSchema, getBranchByIdInputSchema } from './schema';
 import { getMerchantBranches } from './handlers/get_merchant_branches';
 import { getMerchantBranchById } from './handlers/get_merchant_branch_by_id';
 import { mergeMerchantBranches } from './handlers/merge_merchant_branches';
+import { populateDemoBranches } from './handlers/populate_demo_branches';
 
 const t = initTRPC.create({
   transformer: superjson,
@@ -29,6 +30,8 @@ const appRouter = router({
   mergeMerchantBranches: publicProcedure
     .input(mergeBranchesInputSchema)
     .mutation(({ input }) => mergeMerchantBranches(input)),
+  populateDemoBranches: publicProcedure
+    .mutation(() => populateDemoBranches()),
 });
 
 export type AppRouter = typeof appRouter;
