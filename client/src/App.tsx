@@ -164,96 +164,94 @@ function App() {
       )}
 
       {/* Merge Controls */}
-      {selectedBranchIds.length > 0 && (
-        <Card className="mb-6 border-blue-200 bg-blue-50">
-          <CardHeader>
-            <CardTitle className="text-lg">🔄 Merge Configuration</CardTitle>
-            <CardDescription>
-              {selectedBranchIds.length} branches selected. Choose which branch should become the canonical (main) branch.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Select Canonical Branch (data will be merged into this branch):
-              </label>
-              <Select value={canonicalBranchId} onValueChange={setCanonicalBranchId}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Choose the main branch to keep..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {selectedBranches.map((branch: MerchantBranch) => (
-                    <SelectItem key={branch.id} value={branch.id}>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{branch.name}</span>
-                        {branch.address && (
-                          <span className="text-sm text-gray-500">• {branch.address}</span>
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+      <Card className="mb-6 border-blue-200 bg-blue-50">
+        <CardHeader>
+          <CardTitle className="text-lg">🔄 Merge Configuration</CardTitle>
+          <CardDescription>
+            {selectedBranchIds.length} branches selected. Choose which branch should become the canonical (main) branch.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Select Canonical Branch (data will be merged into this branch):
+            </label>
+            <Select value={canonicalBranchId} onValueChange={setCanonicalBranchId} disabled={selectedBranches.length === 0 || !backendConnected}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Choose the main branch to keep..." />
+              </SelectTrigger>
+              <SelectContent>
+                {selectedBranches.map((branch: MerchantBranch) => (
+                  <SelectItem key={branch.id} value={branch.id}>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{branch.name}</span>
+                      {branch.address && (
+                        <span className="text-sm text-gray-500">• {branch.address}</span>
+                      )}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {canonicalBranchId && (
+            <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-sm text-green-800">
+                <strong>Merge Summary:</strong> {selectedBranchIds.length - 1} branches will be merged into{' '}
+                <strong>{branches.find(b => b.id === canonicalBranchId)?.name}</strong>. 
+                All associated data will be transferred to the canonical branch.
+              </p>
             </div>
+          )}
 
-            {canonicalBranchId && (
-              <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-                <p className="text-sm text-green-800">
-                  <strong>Merge Summary:</strong> {selectedBranchIds.length - 1} branches will be merged into{' '}
-                  <strong>{branches.find(b => b.id === canonicalBranchId)?.name}</strong>. 
-                  All associated data will be transferred to the canonical branch.
-                </p>
-              </div>
-            )}
+          <div className="flex gap-3">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="destructive" 
+                  disabled={!canMerge || isMerging || !backendConnected}
+                  className="flex items-center gap-2"
+                >
+                  {isMerging ? '🔄 Merging...' : '🔄 Merge Branches'}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>⚠️ Confirm Branch Merge</AlertDialogTitle>
+                  <AlertDialogDescription className="space-y-2">
+                    <p>This action will:</p>
+                    <ul className="list-disc list-inside space-y-1 text-sm">
+                      <li>Merge {selectedBranchIds.length - 1} branches into the canonical branch</li>
+                      <li>Transfer all associated data (transactions, orders, etc.) to the canonical branch</li>
+                      <li>Permanently delete the merged branches</li>
+                    </ul>
+                    <p className="font-semibold text-red-600">
+                      This action cannot be undone!
+                    </p>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleMerge} className="bg-red-600 hover:bg-red-700">
+                    Confirm Merge
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
-            <div className="flex gap-3">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button 
-                    variant="destructive" 
-                    disabled={!canMerge || isMerging || !backendConnected}
-                    className="flex items-center gap-2"
-                  >
-                    {isMerging ? '🔄 Merging...' : '🔄 Merge Branches'}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>⚠️ Confirm Branch Merge</AlertDialogTitle>
-                    <AlertDialogDescription className="space-y-2">
-                      <p>This action will:</p>
-                      <ul className="list-disc list-inside space-y-1 text-sm">
-                        <li>Merge {selectedBranchIds.length - 1} branches into the canonical branch</li>
-                        <li>Transfer all associated data (transactions, orders, etc.) to the canonical branch</li>
-                        <li>Permanently delete the merged branches</li>
-                      </ul>
-                      <p className="font-semibold text-red-600">
-                        This action cannot be undone!
-                      </p>
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleMerge} className="bg-red-600 hover:bg-red-700">
-                      Confirm Merge
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setSelectedBranchIds([]);
-                  setCanonicalBranchId('');
-                }}
-              >
-                Clear Selection
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setSelectedBranchIds([]);
+                setCanonicalBranchId('');
+              }}
+            >
+              Clear Selection
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Branch List */}
       <Card>
