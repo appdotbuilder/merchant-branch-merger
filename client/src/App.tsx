@@ -9,49 +9,7 @@ import { trpc } from '@/utils/trpc';
 import { useState, useEffect, useCallback } from 'react';
 import type { MerchantBranch } from '../../server/src/schema';
 
-// Demo data to ensure UI functionality regardless of backend state
-const DEMO_BRANCHES: MerchantBranch[] = [
-  {
-    id: 'branch-001',
-    date_added_utc: new Date('2024-01-15'),
-    name: 'Downtown Store',
-    source_url: 'https://example.com/downtown',
-    address: '123 Main St, City Center',
-    merchant_id: 'merchant-001'
-  },
-  {
-    id: 'branch-002',
-    date_added_utc: new Date('2024-02-10'),
-    name: 'Mall Location',
-    source_url: 'https://example.com/mall',
-    address: '456 Shopping Mall, Level 2',
-    merchant_id: 'merchant-001'
-  },
-  {
-    id: 'branch-003',
-    date_added_utc: new Date('2024-03-05'),
-    name: 'Westside Branch',
-    source_url: null,
-    address: '789 West Ave, Westside',
-    merchant_id: 'merchant-001'
-  },
-  {
-    id: 'branch-004',
-    date_added_utc: new Date('2024-01-20'),
-    name: 'Airport Terminal',
-    source_url: 'https://example.com/airport',
-    address: 'Terminal 1, Gate A12',
-    merchant_id: 'merchant-002'
-  },
-  {
-    id: 'branch-005',
-    date_added_utc: new Date('2024-02-28'),
-    name: 'Riverside Plaza',
-    source_url: null,
-    address: '321 River St, Riverside District',
-    merchant_id: 'merchant-001'
-  }
-];
+
 
 function App() {
   const [branches, setBranches] = useState<MerchantBranch[]>([]);
@@ -62,7 +20,7 @@ function App() {
   const [backendConnected, setBackendConnected] = useState(false);
   const [connectionAttempted, setConnectionAttempted] = useState(false);
 
-  // Try to load from backend, fallback to demo data
+  // Load branches from backend
   const loadBranches = useCallback(async () => {
     setIsLoading(true);
     
@@ -70,19 +28,12 @@ function App() {
       // Attempt to connect to backend
       const result = await trpc.getMerchantBranches.query();
       setBackendConnected(true);
-      
-      // Use backend data if available, otherwise use demo data
-      if (result.length > 0) {
-        setBranches(result);
-      } else {
-        setBranches(DEMO_BRANCHES);
-        console.log('📊 Using demo data: Backend returned empty array');
-      }
+      setBranches(result);
     } catch {
-      // Backend not available or error occurred - use demo data
-      console.log('🔧 Backend unavailable, using demo data for UI functionality');
+      // Backend not available or error occurred
+      console.log('🔧 Backend unavailable');
       setBackendConnected(false);
-      setBranches(DEMO_BRANCHES);
+      setBranches([]);
     } finally {
       setIsLoading(false);
       setConnectionAttempted(true);
@@ -136,18 +87,12 @@ function App() {
     setIsMerging(true);
     
     try {
-      if (backendConnected) {
-        // Try backend merge
-        const result = await trpc.mergeMerchantBranches.mutate({
-          canonical_branch_id: canonicalBranchId,
-          branch_ids_to_merge: branchesToMerge
-        });
-        console.log('✅ Backend merge completed:', result);
-      } else {
-        // Simulate merge operation for demo
-        console.log('🔧 Simulating merge operation (backend unavailable)');
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate processing time
-      }
+      // Try backend merge
+      const result = await trpc.mergeMerchantBranches.mutate({
+        canonical_branch_id: canonicalBranchId,
+        branch_ids_to_merge: branchesToMerge
+      });
+      console.log('✅ Backend merge completed:', result);
 
       // Update local state to reflect the merge
       setBranches((prev: MerchantBranch[]) => 
@@ -171,7 +116,7 @@ function App() {
   };
 
   const selectedBranches = branches.filter(branch => selectedBranchIds.includes(branch.id));
-  const canMerge = selectedBranchIds.length >= 2 && canonicalBranchId && selectedBranchIds.includes(canonicalBranchId);
+  const canMerge = selectedBranchIds.length >= 2 && canonicalBranchId && selectedBranchIds.includes(canonicalBranchId) && backendConnected;
 
   return (
     <div className="container mx-auto p-6 max-w-6xl">
@@ -191,7 +136,7 @@ function App() {
             {backendConnected ? (
               <>🟢 Connected to backend server</>
             ) : (
-              <>🟡 Using demo data - backend server unavailable</>
+              <>🔴 Backend server unavailable</>
             )}
           </p>
         </div>
@@ -245,7 +190,7 @@ function App() {
                 <AlertDialogTrigger asChild>
                   <Button 
                     variant="destructive" 
-                    disabled={!canMerge || isMerging}
+                    disabled={!canMerge || isMerging || !backendConnected}
                     className="flex items-center gap-2"
                   >
                     {isMerging ? '🔄 Merging...' : '🔄 Merge Branches'}
@@ -262,14 +207,14 @@ function App() {
                         <li>Permanently delete the merged branches</li>
                       </ul>
                       <p className="font-semibold text-red-600">
-                        {backendConnected ? 'This action cannot be undone!' : 'Demo mode: Changes are simulated only.'}
+                        This action cannot be undone!
                       </p>
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction onClick={handleMerge} className="bg-red-600 hover:bg-red-700">
-                      {backendConnected ? 'Confirm Merge' : 'Demo Merge'}
+                      Confirm Merge
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -313,7 +258,7 @@ function App() {
             </div>
           ) : branches.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              <p>📭 No merchant branches found.</p>
+              <p>📭 No merchant branches found. Please populate the database with branches to get started.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -394,7 +339,7 @@ function App() {
           <strong>💡 Application Status:</strong> This UI demonstrates the complete merchant branch management workflow. 
           {backendConnected 
             ? ' Connected to backend server for live data operations.' 
-            : ' Running in demo mode with sample data to showcase functionality regardless of backend availability.'
+            : ' Backend server unavailable - please check your connection and try again.'
           }
         </p>
       </div>
