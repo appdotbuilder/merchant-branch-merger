@@ -297,22 +297,25 @@ function App() {
                 return (
                   <div
                     key={branch.id}
-                    className={`p-4 border rounded-lg transition-colors ${
+                    className={`p-4 border rounded-lg transition-colors cursor-pointer ${
                       isSelected 
                         ? isCanonical 
                           ? 'border-green-300 bg-green-50' 
                           : 'border-blue-300 bg-blue-50'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
+                    onClick={() => handleBranchSelection(branch.id, !isSelected)}
                   >
                     <div className="flex items-start gap-3">
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={(checked: boolean) => 
-                          handleBranchSelection(branch.id, checked)
-                        }
-                        className="mt-1"
-                      />
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={(checked: boolean) => 
+                            handleBranchSelection(branch.id, checked)
+                          }
+                          className="mt-1"
+                        />
+                      </div>
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
